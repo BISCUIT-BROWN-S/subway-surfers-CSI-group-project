@@ -280,5 +280,3 @@ void SDL_Plotter::getMouseLocation(int& x, int& y){
     cout << x << " " << y << endl;
 }
 
-
-
