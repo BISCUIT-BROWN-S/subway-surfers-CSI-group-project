@@ -2,11 +2,11 @@
 #include<cmath>
 #include<vector>
 
-void createModel(point loc, int size, color c, SDL_Plotter& g) {
+void createModel(point loc, int size, color c, SDL_Plotter& s) {
     for(double i = -size; i <= size;i += 0.1){
         for(double j = -size; j <= size; j += 0.1){
             if(i * i + j * j <= size * size){
-                g.plotPixel(round(loc.x + i), round(loc.y + j), c);
+                s.plotPixel(round(loc.x + i), round(loc.y + j), c);
             }
         }
     }
@@ -182,4 +182,39 @@ void drawTrain(vector<point>& cars, vector<Rectangle>& rects, SDL_Plotter& s, co
             }
         }
     }
+}
+
+bool detectRectCollision(point& playerPos, point& rectPos, int playerSize, Rectangle r) {
+    bool collision = false;
+    
+    int pLeft = playerPos.x - playerSize / 2;
+    int pRight = playerPos.x + playerSize / 2;
+    int pTop = playerPos.y - playerSize / 2;
+    int pBottom = playerPos.y + playerSize / 2;
+    
+    int rLeft = rectPos.x - r.getWidth() / 2;
+    int rRight = rectPos.x + r.getWidth() / 2;
+    int rTop = rectPos.y - r.getHeight() / 2;
+    int rBottom = rectPos.y + r.getHeight() / 2;
+    
+    if (pLeft < rRight &&
+        pRight > rLeft &&
+        pTop < rBottom &&
+        pBottom > rTop) {
+        collision = true;
+    }
+    
+    return collision;
+}
+
+bool detectTrainCollision(point& playerPos, vector<point>& train,
+                          vector<Rectangle>& trainCars, int player_size) {
+    int collision = false;
+    for (unsigned int i = 0; i < train.size(); ++i) {
+        if (detectRectCollision(playerPos, train[i], player_size, trainCars[i])) {
+            collision = true;
+        }
+    }
+    
+    return collision;
 }

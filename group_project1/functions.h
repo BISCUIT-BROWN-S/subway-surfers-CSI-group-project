@@ -52,6 +52,8 @@ void drawTrain(vector<point>&, vector<Rectangle>&, SDL_Plotter&, color);
 
 bool trainHitStatus(vector<point>&, vector<Rectangle>&);
 
+bool detectRectCollision(point&, point&, int, Rectangle);
 
+bool detectTrainCollision(point&, vector<point>&, vector<Rectangle>&, int);
 
 #endif

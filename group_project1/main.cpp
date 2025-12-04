@@ -23,7 +23,6 @@ int main()
     const int COIN_SIZE = 10;
     const int CHASER_SPEED = 25;
     const int POWER_UP_SIZE = 15;
-    const int ROAD_MARK_GAP = 150;
     const color POWER_UP_COLOR(0, 255, 0);
     const point PLAYER_ORIGIN(WIDTH / 2, HEIGHT - 200);
     const point CHASER_ORIGIN(WIDTH / 2, HEIGHT - 100);
@@ -31,6 +30,10 @@ int main()
     const color CHASER_COLOR(255, 0, 0);
     const color LANE_BORDER_COLOR(0, 0, 0);
     const color BACKGROUND_COLOR(100, 100, 100);
+    
+    Uint32 startTime;
+    Uint32 currentTime;
+    float timeElapsed;
     
     point playerPos;
     point chaserPos;
@@ -84,13 +87,18 @@ int main()
     chaserPos.y = CHASER_ORIGIN.y;
     leftEdge = 0;
     rightEdge = WIDTH - PLAYER_SIZE;
-
+    
+    startTime = SDL_GetTicks();
+    
     
     
     while (!g.getQuit()) {
         g.clear();
         
         background.drawRectangle(backgroundOrigin, g);
+        
+        currentTime = SDL_GetTicks();
+        timeElapsed = (currentTime - startTime) / static_cast<float>(1000);
         
         // Input:
         if (g.kbhit()) {
@@ -142,7 +150,15 @@ int main()
             trainSpeed += 5;
         }
         
+        if (detectTrainCollision(playerPos, train, trainCars, PLAYER_SIZE)) {
+            objectSpeed = 0;
+            trainSpeed = 0;
+        }
         
+        // probability handling
+        if (timeElapsed < 10) {
+            trainSpawnChance = 0;
+        }
         
         setBorders(playerPos, leftEdge, rightEdge);
         
