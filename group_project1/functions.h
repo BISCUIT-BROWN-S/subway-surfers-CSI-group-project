@@ -20,6 +20,8 @@ using namespace std;
 
 void createModel(point, int, color, SDL_Plotter&);
 
+void createPlayerModel(point, int, color, SDL_Plotter&);
+
 void setBorders(point&, int, int);
 
 int getLaneCenter(int, const int);
@@ -52,8 +54,14 @@ void drawTrain(vector<point>&, vector<Rectangle>&, SDL_Plotter&, color);
 
 bool trainHitStatus(vector<point>&, vector<Rectangle>&);
 
-bool detectRectCollision(point&, point&, int, Rectangle);
+bool detectRectCollisionX(point&, point&, int, Rectangle);
 
-bool detectTrainCollision(point&, vector<point>&, vector<Rectangle>&, int);
+bool detectRectCollisionY(point&, point&, int, Rectangle);
+
+bool detectTrainCollisionY(point&, vector<point>&, vector<Rectangle>&, int);
+
+bool detectTrainCollisionX(point&, vector<point>&, vector<Rectangle>&, int);
+
+void updateChaserPos(point&, const int, const int, int);
 
 #endif

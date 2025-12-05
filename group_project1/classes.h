@@ -15,6 +15,7 @@ public:
     
     int getWidth() const { return width; }
     int getHeight() const { return height; }
+    color getColor() const { return c; }
     
     void drawRectangle(point&, SDL_Plotter&);
     

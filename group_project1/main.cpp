@@ -34,6 +34,7 @@ int main()
     Uint32 startTime;
     Uint32 currentTime;
     float timeElapsed;
+    float timeSinceLastHit;
     
     point playerPos;
     point chaserPos;
@@ -90,8 +91,6 @@ int main()
     
     startTime = SDL_GetTicks();
     
-    
-    
     while (!g.getQuit()) {
         g.clear();
         
@@ -133,15 +132,19 @@ int main()
         
         laneSwitch(playerPos, WIDTH, PLAYER_SPEED, laneNum, dx);
         laneSwitch(chaserPos, WIDTH, CHASER_SPEED, laneNum, dxC);
-        createModel(playerPos, PLAYER_SIZE, playerColor, g);
+        createPlayerModel(playerPos, PLAYER_SIZE, playerColor, g);
         
-        createModel(chaserPos, CHASER_SIZE, CHASER_COLOR, g);
+        createPlayerModel(chaserPos, CHASER_SIZE, CHASER_COLOR, g);
         updatePoints(playerPos, coins, playerPoints, PLAYER_SIZE, COIN_SIZE);
         
         createModel(powerUpPos, POWER_UP_SIZE, POWER_UP_COLOR, g);
         updatePowerUp(powerUpPos, WIDTH, HEIGHT, objectSpeed, active, powerUpSpawnChance);
         
         
+        // timing handling
+        if (timeElapsed > 10) {
+            updateChaserPos(chaserPos, HEIGHT, CHASER_SIZE, -objectSpeed);
+        }
         
         // collision handling
         if (detectCollision(playerPos, powerUpPos, PLAYER_SIZE, POWER_UP_SIZE)) {
@@ -150,14 +153,12 @@ int main()
             trainSpeed += 5;
         }
         
-        if (detectTrainCollision(playerPos, train, trainCars, PLAYER_SIZE)) {
-            objectSpeed = 0;
-            trainSpeed = 0;
+        if (detectTrainCollisionY(playerPos, train, trainCars, PLAYER_SIZE)) {
+            NULL;
         }
-        
-        // probability handling
-        if (timeElapsed < 10) {
-            trainSpawnChance = 0;
+        if (detectTrainCollisionX(playerPos, train, trainCars, PLAYER_SIZE)) {
+            updateChaserPos(chaserPos, HEIGHT, CHASER_SIZE, objectSpeed);
+            laneSwitch(playerPos, WIDTH, PLAYER_SPEED, laneNum - 1, dx);
         }
         
         setBorders(playerPos, leftEdge, rightEdge);
