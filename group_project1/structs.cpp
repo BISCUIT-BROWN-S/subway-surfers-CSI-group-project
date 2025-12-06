@@ -1,7 +1,5 @@
-#include "classes.h"
+#include "structs.h"
 #include "functions.h"
-
-// Train member functions
 
 void Rectangle::drawRectangle(point& loc, SDL_Plotter& s) {
     

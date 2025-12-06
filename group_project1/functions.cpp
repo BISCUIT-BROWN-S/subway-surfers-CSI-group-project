@@ -2,7 +2,7 @@
 #include<cmath>
 #include<vector>
 
-void createModel(point loc, int size, color c, SDL_Plotter& s) {
+void createModel(point& loc, int size, color c, SDL_Plotter& s) {
     for(double i = -size; i <= size;i += 0.1){
         for(double j = -size; j <= size; j += 0.1){
             if(i * i + j * j <= size * size){
@@ -12,7 +12,7 @@ void createModel(point loc, int size, color c, SDL_Plotter& s) {
     }
 }
 
-void createPlayerModel(point loc, int size, color c, SDL_Plotter& s) {
+void createPlayerModel(point& loc, int size, color c, SDL_Plotter& s) {
     createModel(loc, size, c, s);
     point headLoc;
     int headSize = size / 2;
@@ -22,37 +22,37 @@ void createPlayerModel(point loc, int size, color c, SDL_Plotter& s) {
     
     Rectangle leftLeg;
     point leftLegPos;
-    leftLeg.setColor(c);
-    leftLeg.setHeight(size);
-    leftLeg.setWidth(size / 2);
-    leftLegPos.x = loc.x - (size / 2 + leftLeg.getWidth() / 2);;
+    leftLeg.c = c;
+    leftLeg.height = size;
+    leftLeg.width = size / 2;
+    leftLegPos.x = loc.x - (size / 2 + leftLeg.width / 2);;
     leftLegPos.y = loc.y + size / 2;
     leftLeg.drawRectangle(leftLegPos, s);
     
     Rectangle rightLeg;
     point rightLegPos;
-    rightLeg.setColor(c);
-    rightLeg.setHeight(size);
-    rightLeg.setWidth(size / 2);
-    rightLegPos.x = loc.x + (size / 2 - rightLeg.getWidth() / 2);
+    rightLeg.c = c;
+    rightLeg.height = size;
+    rightLeg.width = size / 2;
+    rightLegPos.x = loc.x + (size / 2 - rightLeg.width / 2);
     rightLegPos.y = loc.y + size / 2;
     leftLeg.drawRectangle(rightLegPos, s);
     
     Rectangle leftArm;
     point leftArmPos;
-    leftArm.setColor(c);
-    leftArm.setHeight(size);
-    leftArm.setWidth(size / 2);
-    leftArmPos.x = loc.x - (size + leftArm.getWidth() / 2);
+    leftArm.c = c;
+    leftArm.height = size;
+    leftArm.width = size / 2;
+    leftArmPos.x = loc.x - (size + leftArm.width / 2);
     leftArmPos.y = loc.y - size / 2;
     leftArm.drawRectangle(leftArmPos, s);
     
     Rectangle rightArm;
     point rightArmPos;
-    rightArm.setColor(c);
-    rightArm.setHeight(size);
-    rightArm.setWidth(size / 2);
-    rightArmPos.x = loc.x + (size - rightArm.getWidth() / 2);
+    rightArm.c = c;
+    rightArm.height = size;
+    rightArm.width = size / 2;
+    rightArmPos.x = loc.x + (size - rightArm.width / 2);
     rightArmPos.y = loc.y - size / 2;
     rightArm.drawRectangle(rightArmPos, s);
 }
@@ -130,12 +130,13 @@ void drawCoins(vector<point>& coins, const int size, color c, SDL_Plotter& s) {
 }
 
 void updatePoints(point& p, vector<point>& coins, double& points,
-                  const int player_size, const int coin_size) {
+                  const int player_size, const int coin_size, Mix_Chunk* effect) {
     for (unsigned int i = 0; i < coins.size(); ++i) {
         if (abs(p.x - coins[i].x) < (player_size + coin_size) &&
             abs(p.y - coins[i].y) < (player_size + coin_size)) {
             
             points++;
+            Mix_PlayChannel(-1, effect, 0);
             coins.erase(coins.begin() + i);
             i--;
         }
@@ -197,7 +198,7 @@ void placeTrain(vector<point>& cars, vector<Rectangle>& rects, const int map_wid
             for (int i = 0; i < numCars; ++i) {
                 point carPos;
                 Rectangle car;
-                carPos.x = getLaneCenter(laneNum, map_width) - (car.getWidth() / 2);
+                carPos.x = getLaneCenter(laneNum, map_width) - (car.width / 2);
                 carPos.y = i * -250;
                 cars.push_back(carPos);
                 rects.push_back(car);
@@ -219,85 +220,45 @@ void updateTrain(vector<point>& cars, const int map_height, int speed, int spawn
 
 void drawTrain(vector<point>& cars, vector<Rectangle>& rects, SDL_Plotter& s, color c) {
     for (unsigned int i = 0; i < cars.size(); ++i) {
-        rects[i].setColor(c);
+        rects[i].c = c;
         rects[i].drawRectangle(cars[i], s);
         if (i > 0) {
             for (int y = cars[i].y; y < (cars[i].y + 250); ++y) {
-                s.plotPixel(cars[i].x + (rects[i].getWidth() / 2), y, c);
+                s.plotPixel(cars[i].x + (rects[i].width / 2), y, c);
             }
         }
     }
 }
 
-bool detectRectCollisionX(point& playerPos, point& rectPos, int playerSize, Rectangle r) {
-    bool collision = false;
+bool detectRectCollision(point& p, point& rectPos, int size, Rectangle r) {
+    bool collision = true;
     
-    int pLeft = playerPos.x - playerSize / 2;
-    int pRight = playerPos.x + playerSize / 2;
-    int pTop = playerPos.y - playerSize / 2;
-    int pBottom = playerPos.y + playerSize / 2;
+    int pLeft = p.x - size;
+    int pRight = p.x + size;
+    int pTop = p.y - size;
+    int pBottom = p.y + size;
     
-    
-    int rTop = rectPos.y - r.getHeight() / 2;
-    int rBottom = rectPos.y + r.getHeight() / 2;
-    int rLeft = rectPos.x - r.getWidth() / 2;
-    int rRight = rectPos.x + r.getWidth() / 2;
-    
-    bool verticalOverlap = (pTop < rBottom && pBottom > rTop);
+    int rLeft = rectPos.x - r.width / 2;
+    int rRight = rectPos.x + r.width / 2;
+    int rTop = rectPos.y - r.height / 2;
+    int rBottom = rectPos.y + r.height / 2;
 
-    bool hitLeftSide  = (pRight >= rLeft  && pLeft < rLeft);
-    bool hitRightSide = (pLeft <= rRight && pRight > rRight);
-
-    if (verticalOverlap && (hitLeftSide || hitRightSide)) {
-        collision = true;
-    }
-    
-    return collision;
-}
-
-bool detectRectCollisionY(point& playerPos, point& rectPos, int playerSize, Rectangle r) {
-    bool collision = false;
-    
-    int pLeft = playerPos.x - playerSize / 2;
-    int pRight = playerPos.x + playerSize / 2;
-    int pTop = playerPos.y - playerSize / 2;
-    int pBottom = playerPos.y + playerSize / 2;
-    
-    int rLeft = rectPos.x - r.getWidth() / 2;
-    int rRight = rectPos.x + r.getWidth() / 2;
-    int rTop = rectPos.y - r.getHeight() / 2;
-    int rBottom = rectPos.y + r.getHeight() / 2;
-    
-    bool horizontalOverlap = (pLeft < rRight && pRight > rLeft);
-
-    bool hitTop = (pBottom >= rTop && pTop < rTop);
-    bool hitBottom = (pTop <= rBottom && pBottom > rBottom);
-
-    if (horizontalOverlap && (hitTop || hitBottom)) {
-        collision = true;
+    if (pLeft > rRight ||
+        pRight < rLeft ||
+        pBottom < rTop ||
+        pTop > rBottom) {
+        collision = false;
     }
         
     return collision;
 }
 
 
-bool detectTrainCollisionY(point& playerPos, vector<point>& train,
+bool detectTrainCollision(point& playerPos, vector<point>& train,
                           vector<Rectangle>& trainCars, int player_size) {
     int collision = false;
     for (unsigned int i = 0; i < train.size(); ++i) {
-        if (detectRectCollisionY(playerPos, train[i], player_size, trainCars[i])) {
-            collision = true;
-        }
-    }
-    
-    return collision;
-}
-
-bool detectTrainCollisionX(point& playerPos, vector<point>& train,
-                          vector<Rectangle>& trainCars, int player_size) {
-    int collision = false;
-    for (unsigned int i = 0; i < train.size(); ++i) {
-        if (detectRectCollisionX(playerPos, train[i], player_size, trainCars[i])) {
+        if (detectRectCollision(playerPos, train[i], player_size, trainCars[i])) {
             collision = true;
         }
     }

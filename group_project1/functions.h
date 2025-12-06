@@ -1,5 +1,5 @@
 #include "SDL_Plotter.h"
-#include "classes.h"
+#include "structs.h"
 
 #ifndef FUNCTIONS_H
 #define FUNCTIONS_H
@@ -18,9 +18,9 @@ using namespace std;
  postcondition: generates player model (circle)
 */
 
-void createModel(point, int, color, SDL_Plotter&);
+void createModel(point&, int, color, SDL_Plotter&);
 
-void createPlayerModel(point, int, color, SDL_Plotter&);
+void createPlayerModel(point&, int, color, SDL_Plotter&);
 
 void setBorders(point&, int, int);
 
@@ -36,7 +36,7 @@ void updateCoins(vector<point>&, const int, const int);
 
 void drawCoins(vector<point>&, const int, const color, SDL_Plotter&);
 
-void updatePoints(point&, vector<point>&, double&, int, const int);
+void updatePoints(point&, vector<point>&, double&, int, const int, Mix_Chunk*);
 
 void drawVerticalLine(SDL_Plotter&, int, int, int, color);
 
@@ -52,15 +52,9 @@ void updateTrain(vector<point>&, const int, int, int, color);
 
 void drawTrain(vector<point>&, vector<Rectangle>&, SDL_Plotter&, color);
 
-bool trainHitStatus(vector<point>&, vector<Rectangle>&);
+bool detectRectCollision(point&, point&, int, Rectangle);
 
-bool detectRectCollisionX(point&, point&, int, Rectangle);
-
-bool detectRectCollisionY(point&, point&, int, Rectangle);
-
-bool detectTrainCollisionY(point&, vector<point>&, vector<Rectangle>&, int);
-
-bool detectTrainCollisionX(point&, vector<point>&, vector<Rectangle>&, int);
+bool detectTrainCollision(point&, vector<point>&, vector<Rectangle>&, int);
 
 void updateChaserPos(point&, const int, const int, int);
 
