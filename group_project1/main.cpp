@@ -224,10 +224,10 @@ int main()
             drawTrain(train, trainCars, g, trainColor);
             
             // timing handling (progressive difficulty)
-            if (timeElapsed > 5 && hasHit == false) {
+            if (timeElapsed >= 5 && hasHit == false) {
                 trainSpawnChance = 100;
-                if (timeElapsed > 20) {
-                    trainSpawnChance = 50;
+                if (timeElapsed >= 20) {
+                    trainSpawnChance = 20;
                     bombSpawnChance = 100;
                 }
                 if (chaserPos.y < HEIGHT + 2 * CHASER_SIZE) {
@@ -298,6 +298,9 @@ int main()
                 bombPos.y += 1000;
                 chaserMovingUp = false;
                 secondHit = false;
+                trainSpawnChance = INT_MAX;
+                immunitySpawnChance = 1000;
+                bombSpawnChance = 300;
                 
                 objectSpeed = 0;
                 
@@ -320,6 +323,9 @@ int main()
                     eraseRow(coins);
                     speedBoostPos.y += 1000;
                     immunityPos.y += 1000;
+                    trainSpawnChance = INT_MAX;
+                    immunitySpawnChance = 1000;
+                    bombSpawnChance = 300;
                     
                     objectSpeed = 0;
                     
