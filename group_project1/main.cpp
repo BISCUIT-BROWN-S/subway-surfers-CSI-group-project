@@ -17,6 +17,8 @@ int main()
     srand(time(NULL));
     
     // Data Abstraction:
+    
+    // const variables
     const int WIDTH = 900;
     const int HEIGHT = 600;
     const int PLAYER_SPEED = 40;
@@ -45,7 +47,7 @@ int main()
     Mix_Chunk* catchEffect;
     Mix_Chunk* bombEffect;
     
-    // text stuff
+    // text variables
     TTF_Init();
     
     TTF_Font* mainMenuFont = TTF_OpenFont("Fonts/ArcadeClassic.ttf", 50);
@@ -54,6 +56,7 @@ int main()
     SDL_Color mainMenuFontColor = {255, 255, 255, 255};
     SDL_Color deathFontColor = {255, 0, 0, 255};
     
+    // time variables
     Uint32 startTime;
     Uint32 currentTime;
     Uint32 timeCollect = 0;
@@ -61,6 +64,7 @@ int main()
     float timeSinceCollect = 0.0;
     float timeElapsed;
     
+    // position variables
     point playerPos(PLAYER_ORIGIN.x, PLAYER_ORIGIN.y);
     point chaserPos(CHASER_ORIGIN.x, CHASER_ORIGIN.y);
     point bombPos(-1000, -1000);
@@ -70,6 +74,7 @@ int main()
     
     Rectangle background;
     
+    // vector variables
     vector<point> coins;
     vector<point> train;
     vector<Rectangle> trainCars;
@@ -94,6 +99,7 @@ int main()
     bool gameState = false;
     bool deathState = false;
     
+    // spawn chance variables
     int coinSpawnChance = 10;
     int speedBoostSpawnChance = 1000;
     int immunitySpawnChance = 2000;
@@ -116,7 +122,8 @@ int main()
     string deathMessage;
     
     // Process:
-
+    
+    // initialize sound
     Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048);
     coinEffect = Mix_LoadWAV("Sounds/impactGlass_heavy_000.wav");
     immunityEffect = Mix_LoadWAV("Sounds/impactBell_heavy_000.wav");
@@ -141,7 +148,6 @@ int main()
         if (menuState) {
             
             // draw text
-            
             g.drawMenu(WIDTH, HEIGHT);
             g.drawText(mainMenuFont, "WELCOME", WIDTH / 2 - 100,
                        200,
@@ -217,12 +223,12 @@ int main()
             updateTrain(train, HEIGHT, objectSpeed, trainSpawnChance, trainColor);
             drawTrain(train, trainCars, g, trainColor);
             
-            
-            // timing handling
+            // timing handling (progressive difficulty)
             if (timeElapsed > 5 && hasHit == false) {
                 trainSpawnChance = 100;
                 if (timeElapsed > 20) {
                     trainSpawnChance = 50;
+                    bombSpawnChance = 100;
                 }
                 if (chaserPos.y < HEIGHT + 2 * CHASER_SIZE) {
                     chaserPos.y += objectSpeed;
@@ -230,7 +236,6 @@ int main()
             }
             
             // collision handling
-            
             if (detectCollision(playerPos, immunityPos, PLAYER_SIZE, IMMUNITY_SIZE)) {
                 immunityPos.y += 1000;
                 timeCollect = SDL_GetTicks();
@@ -369,9 +374,8 @@ int main()
     Mix_CloseAudio();
     
     TTF_CloseFont(mainMenuFont);
+    TTF_CloseFont(deathFont);
     TTF_Quit();
-    
-    // Output:
     
     
     // Assumptions:

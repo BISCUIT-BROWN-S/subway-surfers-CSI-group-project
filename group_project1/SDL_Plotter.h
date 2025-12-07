@@ -159,6 +159,7 @@ public:
     bool getMouseMotion(int& x, int& y);
     void getMouseLocation(int& x, int& y);
     
+    // added function to access color
     Uint32 getColor(int x, int y);
     
     // added functions for text

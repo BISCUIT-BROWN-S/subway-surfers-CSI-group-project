@@ -280,7 +280,7 @@ void SDL_Plotter::getMouseLocation(int& x, int& y){
     cout << x << " " << y << endl;
 }
 
-// added functions for rendering text
+// implemented functions for rendering text
 void SDL_Plotter::drawText(TTF_Font* font, const string& text, int x, int y, SDL_Color color) {
     SDL_Surface* surf = TTF_RenderText_Blended(font, text.c_str(), color);
     SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
