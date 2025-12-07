@@ -41,6 +41,9 @@ int main()
     Mix_Chunk* immunityEffect;
     Mix_Chunk* impactEffect;
     Mix_Chunk* moveEffect;
+    Mix_Chunk* clickEffect;
+    Mix_Chunk* catchEffect;
+    Mix_Chunk* bombEffect;
     
     // text stuff
     TTF_Init();
@@ -93,7 +96,7 @@ int main()
     
     int coinSpawnChance = 10;
     int speedBoostSpawnChance = 1000;
-    int immunitySpawnChance = 500;
+    int immunitySpawnChance = 2000;
     int bombSpawnChance = 300;
     int trainSpawnChance = INT_MAX;
     
@@ -120,6 +123,9 @@ int main()
     speedBoostEffect = Mix_LoadWAV("Sounds/impactBell_heavy_000.wav");
     impactEffect = Mix_LoadWAV("Sounds/impactPlate_light_004.wav");
     moveEffect = Mix_LoadWAV("Sounds/phaserDown2.wav");
+    clickEffect = Mix_LoadWAV("Sounds/impactMetal_heavy_002.wav");
+    catchEffect = Mix_LoadWAV("Sounds/impactPunch_medium_002.wav");
+    bombEffect = Mix_LoadWAV("Sounds/impactWood_medium_001.wav");
     
     
     background.width = WIDTH;
@@ -146,6 +152,7 @@ int main()
             
             if (g.kbhit()) {
                 if (g.getKey() == SDLK_SPACE) {
+                    Mix_PlayChannel(-1, clickEffect, 0);
                     menuState = false;
                     gameState = true;
                 }
@@ -213,7 +220,10 @@ int main()
             
             // timing handling
             if (timeElapsed > 5 && hasHit == false) {
-                trainSpawnChance = 200;
+                trainSpawnChance = 100;
+                if (timeElapsed > 20) {
+                    trainSpawnChance = 50;
+                }
                 if (chaserPos.y < HEIGHT + 2 * CHASER_SIZE) {
                     chaserPos.y += objectSpeed;
                 }
@@ -221,14 +231,34 @@ int main()
             
             // collision handling
             
-            if (detectCollision(playerPos, bombPos, PLAYER_SIZE, BOMB_SIZE)) {
-                if (hasHit == true) {
-                    secondHit = true;
+            if (detectCollision(playerPos, immunityPos, PLAYER_SIZE, IMMUNITY_SIZE)) {
+                immunityPos.y += 1000;
+                timeCollect = SDL_GetTicks();
+                immunityActive = true;
+                Mix_PlayChannel(-1, immunityEffect, 0);
+            }
+            
+            if (immunityActive) {
+                now = SDL_GetTicks();
+                timeSinceCollect = (now - timeCollect) / 1000.0;
+                objectSpeed = 40;
+                if (timeSinceCollect >= 20.0) {
+                    immunityActive = false;
+                    objectSpeed = 10;
                 }
-                
-                bombPos.y += 1000;
-                hasHit = true;
-                chaserMovingUp = true;
+            }
+            
+            if (!immunityActive) {
+                if (detectCollision(playerPos, bombPos, PLAYER_SIZE, BOMB_SIZE)) {
+                    if (hasHit == true) {
+                        secondHit = true;
+                    }
+                    
+                    Mix_PlayChannel(-1, bombEffect, 0);
+                    bombPos.y += 1000;
+                    hasHit = true;
+                    chaserMovingUp = true;
+                }
             }
             
             if (chaserMovingUp) {
@@ -255,33 +285,20 @@ int main()
             
             if (detectCollision(playerPos, chaserPos, PLAYER_SIZE, CHASER_SIZE)) {
                 
+                Mix_PlayChannel(-1, catchEffect, 0);
                 eraseRow(train);
                 eraseRow(coins);
                 speedBoostPos.y += 1000;
                 immunityPos.y += 1000;
+                bombPos.y += 1000;
+                chaserMovingUp = false;
+                secondHit = false;
                 
                 objectSpeed = 0;
                 
                 gameState = false;
                 deathState = true;
                 deathMessage = "you  were  caught";
-            }
-            
-            if (detectCollision(playerPos, immunityPos, PLAYER_SIZE, IMMUNITY_SIZE)) {
-                immunityPos.y += 1000;
-                timeCollect = SDL_GetTicks();
-                immunityActive = true;
-                Mix_PlayChannel(-1, immunityEffect, 0);
-            }
-            
-            if (immunityActive) {
-                now = SDL_GetTicks();
-                timeSinceCollect = (now - timeCollect) / 1000.0;
-                objectSpeed = 40;
-                if (timeSinceCollect >= 20.0) {
-                    immunityActive = false;
-                    objectSpeed = 10;
-                }
             }
             
             if (detectCollision(playerPos, speedBoostPos, PLAYER_SIZE, SPEED_BOOST_SIZE)) {
@@ -331,14 +348,18 @@ int main()
             
             if (g.kbhit()) {
                 if (g.getKey() == SDLK_SPACE) {
+                    Mix_PlayChannel(-1, clickEffect, 0);
                     gameState = true;
                     deathState = false;
                     
                     // reset game
+                    startTime = SDL_GetTicks();
                     objectSpeed = 10;
                     playerPoints = 0;
                     playerPos.x = PLAYER_ORIGIN.x;
                     playerPos.y = PLAYER_ORIGIN.y;
+                    chaserPos.x = CHASER_ORIGIN.x;
+                    chaserPos.y = CHASER_ORIGIN.y;
                     hasHit = false;
                 }
             }

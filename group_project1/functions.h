@@ -17,7 +17,6 @@ using namespace std;
  precondition: none
  postcondition: generates player model (circle)
 */
-
 void createModel(point&, int, color, SDL_Plotter&);
 
 void createPlayerModel(point&, int, color, SDL_Plotter&);
