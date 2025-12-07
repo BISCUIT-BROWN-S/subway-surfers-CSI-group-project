@@ -280,3 +280,27 @@ void SDL_Plotter::getMouseLocation(int& x, int& y){
     cout << x << " " << y << endl;
 }
 
+// added functions for rendering text
+void SDL_Plotter::drawText(TTF_Font* font, const string& text, int x, int y, SDL_Color color) {
+    SDL_Surface* surf = TTF_RenderText_Blended(font, text.c_str(), color);
+    SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
+    SDL_FreeSurface(surf);
+
+    SDL_Rect rect = {x, y, 0, 0};
+    SDL_QueryTexture(tex, NULL, NULL, &rect.w, &rect.h);
+
+    SDL_RenderCopy(renderer, tex, NULL, &rect);
+    SDL_DestroyTexture(tex);
+}
+
+void SDL_Plotter::drawMenu(int width, int height) {
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_Rect bgRect = {0, 0, width, height};
+    SDL_RenderFillRect(renderer, &bgRect);
+}
+
+void SDL_Plotter::present() {
+    SDL_RenderPresent(renderer);
+}
+
+

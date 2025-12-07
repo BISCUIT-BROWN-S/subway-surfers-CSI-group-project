@@ -22,13 +22,15 @@ void createModel(point&, int, color, SDL_Plotter&);
 
 void createPlayerModel(point&, int, color, SDL_Plotter&);
 
+void createImmunityModel(point&, int, color, SDL_Plotter&);
+
 void setBorders(point&, int, int);
 
 int getLaneCenter(int, const int);
 
 void shuffleLanes(vector<int>&);
 
-void laneSwitch(point&, const int, const int, int, int&);
+void laneSwitch(point&, const int, int, int, int&);
 
 void placeCoinRow(vector<point>&, const int, int);
 
@@ -36,11 +38,9 @@ void updateCoins(vector<point>&, const int, const int);
 
 void drawCoins(vector<point>&, const int, const color, SDL_Plotter&);
 
-void updatePoints(point&, vector<point>&, double&, int, const int, Mix_Chunk*);
+void updatePoints(point&, vector<point>&, int&, int, const int, Mix_Chunk*);
 
 void drawVerticalLine(SDL_Plotter&, int, int, int, color);
-
-void drawHorizontalLine(SDL_Plotter&, int, int, int, color);
 
 void updatePowerUp(point&, const int, const int, int, bool&, int);
 
@@ -56,6 +56,6 @@ bool detectRectCollision(point&, point&, int, Rectangle);
 
 bool detectTrainCollision(point&, vector<point>&, vector<Rectangle>&, int);
 
-void updateChaserPos(point&, const int, const int, int);
+void eraseRow(vector<point>&);
 
 #endif

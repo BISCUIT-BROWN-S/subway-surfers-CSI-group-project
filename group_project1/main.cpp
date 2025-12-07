@@ -11,8 +11,10 @@
 #include "functions.h"
 #include "structs.h"
 
+
 int main()
 {
+    srand(time(NULL));
     
     // Data Abstraction:
     const int WIDTH = 900;
@@ -21,16 +23,17 @@ int main()
     const int PLAYER_SIZE = 20;
     const int CHASER_SIZE = 25;
     const int COIN_SIZE = 10;
+    const int BOMB_SIZE = 10;
     const int CHASER_SPEED = 25;
     const int SPEED_BOOST_SIZE = 15;
     const int IMMUNITY_SIZE = 20;
     const color SPEED_BOOST_COLOR(0, 255, 0);
-    const color IMMUNITY_COLOR(0, 0, 255);
+    const color IMMUNITY_COLOR(0, 200, 255);
     const point PLAYER_ORIGIN(WIDTH / 2, HEIGHT - 200);
     const point CHASER_ORIGIN(WIDTH / 2, HEIGHT - 100);
     const color COIN_COLOR(255, 215, 0);
     const color LANE_BORDER_COLOR(0, 0, 0);
-    const color BACKGROUND_COLOR(150, 150, 150);
+    const color BOMB_COLOR(255, 0, 0);
     
     // sound variables
     Mix_Chunk* coinEffect;
@@ -39,16 +42,27 @@ int main()
     Mix_Chunk* impactEffect;
     Mix_Chunk* moveEffect;
     
+    // text stuff
+    TTF_Init();
+    
+    TTF_Font* mainMenuFont = TTF_OpenFont("Fonts/ArcadeClassic.ttf", 50);
+    TTF_Font* deathFont = TTF_OpenFont("Fonts/BleedingPixels.ttf", 50);
+    
+    SDL_Color mainMenuFontColor = {255, 255, 255, 255};
+    SDL_Color deathFontColor = {255, 0, 0, 255};
+    
     Uint32 startTime;
     Uint32 currentTime;
-    Uint32 timeCollect = 0.0;
+    Uint32 timeCollect = 0;
+    Uint32 now;
     float timeSinceCollect = 0.0;
     float timeElapsed;
     
     point playerPos(PLAYER_ORIGIN.x, PLAYER_ORIGIN.y);
     point chaserPos(CHASER_ORIGIN.x, CHASER_ORIGIN.y);
-    point speedBoostPos;
-    point immunityPos;
+    point bombPos(-1000, -1000);
+    point speedBoostPos(-1000, -1000);
+    point immunityPos(-1000, -1000);
     point backgroundOrigin(0, 0);
     
     Rectangle background;
@@ -57,11 +71,14 @@ int main()
     vector<point> train;
     vector<Rectangle> trainCars;
     
+    // color variables
     color playerColor(0, 0, 0);
-    color chaserColor(255, 0, 0);
+    color chaserColor(200, 0, 0);
     color trainColor(50, 50, 50);
-    double playerPoints = 0;
-    double playerScore = 0;
+    color gameBackgroundColor(150, 150, 150);
+    color titleColor(0, 0, 0);
+    
+    int playerPoints = 0;
     
     int dxP = 0, dxC = 0;
     int laneNum = 2;
@@ -70,40 +87,43 @@ int main()
     char key;
     
     // game phases/states
-    bool StartMenu;
-    bool Game;
-    bool Death;
+    bool menuState = true;
+    bool gameState = false;
+    bool deathState = false;
     
     int coinSpawnChance = 10;
     int speedBoostSpawnChance = 1000;
     int immunitySpawnChance = 500;
-    int trainSpawnChance = 500;
+    int bombSpawnChance = 300;
+    int trainSpawnChance = INT_MAX;
     
     int objectSpeed = 10;
-    int trainSpeed = objectSpeed - 2;
     
     int line1X = laneWidth;
     int line2X = 2 * laneWidth;
     
-    bool active = true;
+    bool active = false;
     bool immunityActive = false;
+    bool hasHit = false;
+    bool secondHit = false;
+    bool chaserMovingUp = false;
     
     SDL_Plotter g(HEIGHT, WIDTH);
     
-    
-    // Input:
+    string deathMessage;
     
     // Process:
-    srand(time(NULL));
+
     Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048);
     coinEffect = Mix_LoadWAV("Sounds/impactGlass_heavy_000.wav");
     immunityEffect = Mix_LoadWAV("Sounds/impactBell_heavy_000.wav");
+    speedBoostEffect = Mix_LoadWAV("Sounds/impactBell_heavy_000.wav");
     impactEffect = Mix_LoadWAV("Sounds/impactPlate_light_004.wav");
     moveEffect = Mix_LoadWAV("Sounds/phaserDown2.wav");
-
+    
+    
     background.width = WIDTH;
     background.height = HEIGHT;
-    background.c = BACKGROUND_COLOR;
     
     leftEdge = 0;
     rightEdge = WIDTH - PLAYER_SIZE;
@@ -112,115 +132,223 @@ int main()
     
     while (!g.getQuit()) {
         g.clear();
-        
-        background.drawRectangle(backgroundOrigin, g);
-        
-        currentTime = SDL_GetTicks();
-        timeElapsed = (currentTime - startTime) / 1000.0;
-        
-        // Input:
-        if (g.kbhit()) {
-            key = g.getKey();
-            Mix_PlayChannel(-1, moveEffect, 0);
-            if (!moveEffect) {
-                printf("Failed to load moveEffect: %s\n", Mix_GetError());
-            }
-            if ((key == LEFT_ARROW || key == 'a') && laneNum > 1) {
-                laneNum--;
-                dxP = -PLAYER_SPEED;
-                dxC = -CHASER_SPEED;
-            }
-            else if ((key == RIGHT_ARROW || key == 'd') && laneNum < 3) {
-                laneNum++;
-                dxP = PLAYER_SPEED;
-                dxC = CHASER_SPEED;
+        if (menuState) {
+            
+            // draw text
+            
+            g.drawMenu(WIDTH, HEIGHT);
+            g.drawText(mainMenuFont, "WELCOME", WIDTH / 2 - 100,
+                       200,
+                       mainMenuFontColor);
+            g.drawText(mainMenuFont, "PRESS  SPACE  TO  PLAY",
+                       225, 300, mainMenuFontColor);
+            g.present();
+            
+            if (g.kbhit()) {
+                if (g.getKey() == SDLK_SPACE) {
+                    menuState = false;
+                    gameState = true;
+                }
             }
         }
-        
-        // Process:
-        
-        if (coins.empty() || coins.back().y > 150) {
-            placeCoinRow(coins, WIDTH, coinSpawnChance);
-        }
-        
-        updateCoins(coins, objectSpeed, HEIGHT);
-        drawCoins(coins, COIN_SIZE, COIN_COLOR, g);
-        
-        if (train.empty()) {
-            placeTrain(train, trainCars, WIDTH, trainSpawnChance);
-        }
-        
-        updateTrain(train, HEIGHT, trainSpeed, trainSpawnChance, trainColor);
-        drawTrain(train, trainCars, g, trainColor);
-        
-        laneSwitch(playerPos, WIDTH, PLAYER_SPEED, laneNum, dxP);
-        laneSwitch(chaserPos, WIDTH, CHASER_SPEED, laneNum, dxC);
-        createPlayerModel(playerPos, PLAYER_SIZE, playerColor, g);
-        
-        createPlayerModel(chaserPos, CHASER_SIZE, chaserColor, g);
-        updatePoints(playerPos, coins, playerPoints, PLAYER_SIZE, COIN_SIZE, coinEffect);
-        
-        createModel(speedBoostPos, SPEED_BOOST_SIZE, SPEED_BOOST_COLOR, g);
-        updatePowerUp(speedBoostPos, WIDTH, HEIGHT, objectSpeed, active,
-                      speedBoostSpawnChance);
-        
-        createModel(immunityPos, IMMUNITY_SIZE, IMMUNITY_COLOR, g);
-        updatePowerUp(immunityPos, WIDTH, HEIGHT, objectSpeed, active,
-                      immunitySpawnChance);
-        
-        
-        // timing handling
-        /* FIX ME!!!
-        if (timeElapsed > 10) {
-            updateChaserPos(chaserPos, HEIGHT, CHASER_SIZE, -objectSpeed);
-        }
-        */
-        
-        // collision handling
-        if (detectCollision(playerPos, speedBoostPos, PLAYER_SIZE, SPEED_BOOST_SIZE)) {
-            speedBoostPos.y += 1000; // remove from screen
-            objectSpeed += 5;
-            trainSpeed += 5;
-            Mix_PlayChannel(-1, speedBoostEffect, 0);
-        }
-        
-        if (detectCollision(playerPos, immunityPos, PLAYER_SIZE, IMMUNITY_SIZE)) {
-            immunityPos.y += 1000; // remove from screen
-            timeCollect = SDL_GetTicks();
-            immunityActive = true;
-            Mix_PlayChannel(-1, immunityEffect, 0);
-        }
-        
-        if (immunityActive) {
-            timeSinceCollect = (currentTime - timeCollect) / 1000.0;
-            objectSpeed = 40;
-            trainSpeed = 35;
-            if (timeSinceCollect >= 20.0) {
-                immunityActive = false;
-                objectSpeed = 10;
-                trainSpeed = objectSpeed - 2;
+        else if (gameState) {
+            background.c = gameBackgroundColor;
+            background.drawRectangle(backgroundOrigin, g);
+            
+            currentTime = SDL_GetTicks();
+            timeElapsed = (currentTime - startTime) / 1000.0;
+            
+            // Input:
+            if (g.kbhit()) {
+                key = g.getKey();
+                Mix_PlayChannel(-1, moveEffect, 0);
+                
+                if ((key == LEFT_ARROW || key == 'a') && laneNum > 1) {
+                    laneNum--;
+                    dxP = -PLAYER_SPEED;
+                    dxC = -CHASER_SPEED;
+                }
+                else if ((key == RIGHT_ARROW || key == 'd') && laneNum < 3) {
+                    laneNum++;
+                    dxP = PLAYER_SPEED;
+                    dxC = CHASER_SPEED;
+                }
             }
-        }
-
-        
-        if (!immunityActive) {
-            if (detectTrainCollision(playerPos, train, trainCars, PLAYER_SIZE)) {
+            
+            // Process:
+            
+            if (coins.empty() || coins.back().y > 150) {
+                placeCoinRow(coins, WIDTH, coinSpawnChance);
+            }
+            
+            updateCoins(coins, objectSpeed, HEIGHT);
+            drawCoins(coins, COIN_SIZE, COIN_COLOR, g);
+            
+            laneSwitch(playerPos, WIDTH, PLAYER_SPEED, laneNum, dxP);
+            laneSwitch(chaserPos, WIDTH, CHASER_SPEED, laneNum, dxC);
+            createPlayerModel(playerPos, PLAYER_SIZE, playerColor, g);
+            
+            createPlayerModel(chaserPos, CHASER_SIZE, chaserColor, g);
+            updatePoints(playerPos, coins, playerPoints, PLAYER_SIZE, COIN_SIZE, coinEffect);
+            
+            createModel(speedBoostPos, SPEED_BOOST_SIZE, SPEED_BOOST_COLOR, g);
+            updatePowerUp(speedBoostPos, WIDTH, HEIGHT, objectSpeed, active,
+                          speedBoostSpawnChance);
+            
+            createImmunityModel(immunityPos, IMMUNITY_SIZE, IMMUNITY_COLOR, g);
+            updatePowerUp(immunityPos, WIDTH, HEIGHT, objectSpeed, active,
+                          immunitySpawnChance);
+            
+            createModel(bombPos, BOMB_SIZE, BOMB_COLOR, g);
+            updatePowerUp(bombPos, WIDTH, HEIGHT, objectSpeed, active,
+                          bombSpawnChance);
+            
+            if (train.empty()) {
+                placeTrain(train, trainCars, WIDTH, trainSpawnChance);
+            }
+            
+            updateTrain(train, HEIGHT, objectSpeed, trainSpawnChance, trainColor);
+            drawTrain(train, trainCars, g, trainColor);
+            
+            
+            // timing handling
+            if (timeElapsed > 5 && hasHit == false) {
+                trainSpawnChance = 200;
+                if (chaserPos.y < HEIGHT + 2 * CHASER_SIZE) {
+                    chaserPos.y += objectSpeed;
+                }
+            }
+            
+            // collision handling
+            
+            if (detectCollision(playerPos, bombPos, PLAYER_SIZE, BOMB_SIZE)) {
+                if (hasHit == true) {
+                    secondHit = true;
+                }
+                
+                bombPos.y += 1000;
+                hasHit = true;
+                chaserMovingUp = true;
+            }
+            
+            if (chaserMovingUp) {
+                
+                if (secondHit == true) {
+                    if (chaserPos.y > playerPos.y) {
+                        chaserPos.y -= objectSpeed;
+                    }
+                    else {
+                        chaserMovingUp = false;
+                    }
+                }
+                else {
+                    if (chaserPos.y > CHASER_ORIGIN.y) {
+                        chaserPos.y -= objectSpeed;
+                    }
+                    else {
+                        chaserMovingUp = false;
+                    }
+                }
+            }
+            
+            
+            
+            if (detectCollision(playerPos, chaserPos, PLAYER_SIZE, CHASER_SIZE)) {
+                
+                eraseRow(train);
+                eraseRow(coins);
+                speedBoostPos.y += 1000;
+                immunityPos.y += 1000;
+                
                 objectSpeed = 0;
-                trainSpeed = 0;
-                Mix_PlayChannel(-1, impactEffect, 0);
+                
+                gameState = false;
+                deathState = true;
+                deathMessage = "you  were  caught";
+            }
+            
+            if (detectCollision(playerPos, immunityPos, PLAYER_SIZE, IMMUNITY_SIZE)) {
+                immunityPos.y += 1000;
+                timeCollect = SDL_GetTicks();
+                immunityActive = true;
+                Mix_PlayChannel(-1, immunityEffect, 0);
+            }
+            
+            if (immunityActive) {
+                now = SDL_GetTicks();
+                timeSinceCollect = (now - timeCollect) / 1000.0;
+                objectSpeed = 40;
+                if (timeSinceCollect >= 20.0) {
+                    immunityActive = false;
+                    objectSpeed = 10;
+                }
+            }
+            
+            if (detectCollision(playerPos, speedBoostPos, PLAYER_SIZE, SPEED_BOOST_SIZE)) {
+                speedBoostPos.y += 1000;
+                objectSpeed += 5;
+                Mix_PlayChannel(-1, speedBoostEffect, 0);
+            }
+            
+            if (!immunityActive) {
+                if (detectTrainCollision(playerPos, train, trainCars, PLAYER_SIZE)) {
+                    Mix_PlayChannel(-1, impactEffect, 0);
+                    
+                    eraseRow(train);
+                    eraseRow(coins);
+                    speedBoostPos.y += 1000;
+                    immunityPos.y += 1000;
+                    
+                    objectSpeed = 0;
+                    
+                    gameState = false;
+                    deathState = true;
+                    deathMessage = "you  were  hit  by  a  train";
+                }
+            }
+            
+            setBorders(playerPos, leftEdge, rightEdge);
+            
+            drawVerticalLine(g, line1X, HEIGHT, 0, LANE_BORDER_COLOR);
+            drawVerticalLine(g, line2X, HEIGHT, 0, LANE_BORDER_COLOR);
+            
+            g.update();
+            g.Sleep(10);
+        }
+        else if (deathState) {
+            g.drawMenu(WIDTH, HEIGHT);
+            g.drawText(deathFont, "YOU DIED", 325, 100,
+                       deathFontColor);
+            g.drawText(deathFont, deathMessage,
+                       WIDTH / 2 - (static_cast<int>(deathMessage.length() / 4) * 50) + 20,
+                       200, deathFontColor);
+            g.drawText(mainMenuFont, "YOUR  SCORE  WAS   "
+                       + to_string(playerPoints),
+                       250, 300, mainMenuFontColor);
+            g.drawText(mainMenuFont, "PRESS  SPACE  TO  RETRY",
+                       220, 400, mainMenuFontColor);
+            g.present();
+            
+            if (g.kbhit()) {
+                if (g.getKey() == SDLK_SPACE) {
+                    gameState = true;
+                    deathState = false;
+                    
+                    // reset game
+                    objectSpeed = 10;
+                    playerPoints = 0;
+                    playerPos.x = PLAYER_ORIGIN.x;
+                    playerPos.y = PLAYER_ORIGIN.y;
+                    hasHit = false;
+                }
             }
         }
-        
-        setBorders(playerPos, leftEdge, rightEdge);
-        
-        drawVerticalLine(g, line1X, HEIGHT, 0, LANE_BORDER_COLOR);
-        drawVerticalLine(g, line2X, HEIGHT, 0, LANE_BORDER_COLOR);
-        
-        g.update();
-        g.Sleep(10);
     }
     
     Mix_CloseAudio();
+    
+    TTF_CloseFont(mainMenuFont);
+    TTF_Quit();
     
     // Output:
     

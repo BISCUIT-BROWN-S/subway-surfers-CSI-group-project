@@ -28,9 +28,10 @@
 #include <SDL_mixer.h>
 #include <SDL_thread.h>
 
+// SDL_ttf text library
+#include <SDL_ttf.h>
+
 //Windows Library
-//#include <SDL2/SDL.h>
-//#include <SDL2/SDL_mixer.h>
 
 #include <string.h>
 #include <iostream>
@@ -157,8 +158,15 @@ public:
     bool getMouseUp(int& x, int& y);
     bool getMouseMotion(int& x, int& y);
     void getMouseLocation(int& x, int& y);
-
+    
     Uint32 getColor(int x, int y);
+    
+    // added functions for text
+    void drawText(TTF_Font*, const string&, int, int, SDL_Color);
+    
+    void drawMenu(int, int);
+    
+    void present();
 
 };
 

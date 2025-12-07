@@ -331,6 +331,10 @@
 					/opt/homebrew/Cellar/sdl2/2.32.10/lib,
 				);
 				"LIBRARY_SEARCH_PATHS[arch=*]" = /opt/homebrew/lib;
+				"OTHER_LDFLAGS[arch=*]" = (
+					"-lSDL2",
+					"-lSDL2_ttf",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -346,6 +350,10 @@
 					/opt/homebrew/Cellar/sdl2/2.32.10/lib,
 				);
 				"LIBRARY_SEARCH_PATHS[arch=*]" = /opt/homebrew/lib;
+				"OTHER_LDFLAGS[arch=*]" = (
+					"-lSDL2",
+					"-lSDL2_ttf",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;

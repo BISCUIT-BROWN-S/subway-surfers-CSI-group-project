@@ -14,6 +14,7 @@ void createModel(point& loc, int size, color c, SDL_Plotter& s) {
 
 void createPlayerModel(point& loc, int size, color c, SDL_Plotter& s) {
     createModel(loc, size, c, s);
+    
     point headLoc;
     int headSize = size / 2;
     headLoc.x = loc.x;
@@ -57,6 +58,32 @@ void createPlayerModel(point& loc, int size, color c, SDL_Plotter& s) {
     rightArm.drawRectangle(rightArmPos, s);
 }
 
+void createImmunityModel(point& loc, int size, color c, SDL_Plotter& s) {
+    createModel(loc, size, c, s);
+    
+    color eyeColor(0, 0, 0);
+    int eyeSize = size / 5;
+    
+    point leftEye;
+    leftEye.x = loc.x - size / 2;
+    leftEye.y = loc.y - size / 2 + 3;
+    createModel(leftEye, eyeSize, eyeColor, s);
+    
+    point rightEye;
+    rightEye.x = loc.x + size / 2;
+    rightEye.y = loc.y - size / 2 + 3;
+    createModel(rightEye, eyeSize, eyeColor, s);
+    
+    point mouthPos;
+    Rectangle mouth;
+    mouth.width = size;
+    mouth.height = 2;
+    mouthPos.x = loc.x - size / 2;
+    mouthPos.y = loc.y + size / 2;
+    mouth.drawRectangle(mouthPos, s);
+    
+}
+
 void setBorders(point& p, int leftLimit, int rightLimit) {
     if (p.x < leftLimit) {
         p.x = leftLimit;
@@ -78,7 +105,7 @@ void shuffleLanes(vector<int>& lanes) {
     }
 }
 
-void laneSwitch(point& p, const int width, const int speed, int laneNum, int& dx) {
+void laneSwitch(point& p, const int width, int speed, int laneNum, int& dx) {
     int targetX = getLaneCenter(laneNum, width);
     
     if (p.x < targetX) {
@@ -129,7 +156,7 @@ void drawCoins(vector<point>& coins, const int size, color c, SDL_Plotter& s) {
     }
 }
 
-void updatePoints(point& p, vector<point>& coins, double& points,
+void updatePoints(point& p, vector<point>& coins, int& points,
                   const int player_size, const int coin_size, Mix_Chunk* effect) {
     for (unsigned int i = 0; i < coins.size(); ++i) {
         if (abs(p.x - coins[i].x) < (player_size + coin_size) &&
@@ -149,22 +176,15 @@ void drawVerticalLine(SDL_Plotter& s, int lanePosX, int height, int yInit, color
     }
 }
 
-void drawHorizontalLine(SDL_Plotter& s, int lanePosY, int width, int xInit, color c) {
-    for (int x = xInit; x < (xInit + width); ++x) {
-        s.plotPixel(x, lanePosY, c);
-    }
-}
-
 void updatePowerUp(point& p, const int map_width, const int map_height, int speed,
                    bool& active, int spawnChance) {
-    if (!active) {
+    if (active == false) {
         if (rand() % spawnChance == 0) {
             p.x = getLaneCenter(rand() % 3 + 1, map_width);
             p.y = 0;
             active = true;
         }
     }
-    
     p.y += speed;
     
     if (p.y > map_height) {
@@ -266,8 +286,10 @@ bool detectTrainCollision(point& playerPos, vector<point>& train,
     return collision;
 }
 
-void updateChaserPos(point& chaserPos, const int map_height, const int chaserSize, int speed) {
-    for (int i = chaserPos.y; i < (map_height + chaserSize); ++i) {
-        chaserPos.y += speed;
+void eraseRow(vector<point>& row) {
+    for (unsigned int i = 0; i < row.size(); ++i) {
+        row[i].y += 1000;
     }
 }
+
+
