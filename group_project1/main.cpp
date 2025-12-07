@@ -123,7 +123,7 @@ int main()
     
     // Process:
     
-    // initialize sound
+    // load sound
     Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048);
     coinEffect = Mix_LoadWAV("Sounds/impactGlass_heavy_000.wav");
     immunityEffect = Mix_LoadWAV("Sounds/impactBell_heavy_000.wav");
@@ -147,7 +147,7 @@ int main()
         g.clear();
         if (menuState) {
             
-            // draw text
+            // Output: (draws text to screen)
             g.drawMenu(WIDTH, HEIGHT);
             g.drawText(mainMenuFont, "WELCOME", WIDTH / 2 - 100,
                        200,
@@ -339,6 +339,7 @@ int main()
         }
         else if (deathState) {
             g.drawMenu(WIDTH, HEIGHT);
+            // Output: (draws text to screen)
             g.drawText(deathFont, "YOU DIED", 325, 100,
                        deathFontColor);
             g.drawText(deathFont, deathMessage,
